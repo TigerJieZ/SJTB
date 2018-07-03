@@ -1,10 +1,11 @@
-import time
+import sys
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
 
 class WeiboCookies():
@@ -49,7 +50,7 @@ class WeiboCookies():
         try:
             return bool(
                 WebDriverWait(self.browser, 5).until(
-                    EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, 'sujie1997'))))
+                    EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, self.username))))
         except TimeoutException:
             return False
 
@@ -83,11 +84,6 @@ class WeiboCookies():
         :return:
         """
         self.open()
-        if self.password_error():
-            return {
-                'status': 2,
-                'content': '用户名或密码错误'
-            }
         # 如果不需要验证码直接登录成功
         if self.login_successfully():
             cookies = self.get_cookies()
@@ -108,15 +104,37 @@ class WeiboCookies():
                 'content': '登录失败'
             }
 
+
 # 捕获每个账号的cookie
 def run(account_list):
     cookies = []
+    print('共需获取cookies数：', len(account_list))
+    i = 1
     for account in account_list:
-        display = Display(visible=0, size=(800, 800))
-        display.start()
-        cookies.append(WeiboCookies(account['user_name'], account['password'], webdriver.Chrome()).run())
+        # 记录每次cookie获取耗时
+        now=time.time()
+        # cookie获取
+        try:
+            # 启动display供网页在虚拟窗口中打开
+            display = Display(visible=0, size=(800, 800))
+            display.start()
+            print(account)
+            cookies.append(WeiboCookies(account['user_name'], account['password'], webdriver.Chrome()).run())
+        except Exception as e:
+            s = sys.exc_info()
+            print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
+            print(e)
+            cookies.append(WeiboCookies(account['user_name'], account['password'], webdriver.Chrome()).run())
+        finally:
+            display.stop()
+
+        print('cookie获取耗时：', time.time() - now)
+        print('已获取cookie数：', i)
+        print(cookies)
+        i += 1
     return cookies
 
 
 if __name__ == '__main__':
+    print(run([{'user_name': 'sujie1997', 'password': 'sujie1997'}]))
     print(run([{'user_name': 'sujie1997', 'password': 'sujie1997'}]))

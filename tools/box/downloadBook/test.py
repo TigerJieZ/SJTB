@@ -1,6 +1,7 @@
+import sys
+sys.path.append('/home/ubuntu/Python_Workspace/SJTB/')
 from tools.box.downloadBook.spyder import aszwParser
 from tools.box.downloadBook.db import dbController
-
 
 def testInsertBook():
     chapters=[{'chapter_name':'第一章','chapter_url':'https://www.23zw.me/olread/68/68913/c10f9c35044ae520694a837c12ecf81e.html'},
@@ -26,9 +27,18 @@ def testInitDatabase():
     dbC= dbController.dbc('bookwarehouse')
     dbC.initDatebase()
 
+def testAddAccount():
+    dbC=dbController.dbc('bookwarehouse')
+    dbC.addAccount({'name':'sujie1997','password':'sujie1997','source':1})
+
+def testInitCookies():
+    dbC = dbController.dbc('bookwarehouse')
+    dbC.initCookies()
 
 
 if __name__ == '__main__':
     # testInsertBook()
     # testfind_section_urls()
-    testInitDatabase()
+    # testInitDatabase()
+    # testAddAccount()
+    testInitCookies()

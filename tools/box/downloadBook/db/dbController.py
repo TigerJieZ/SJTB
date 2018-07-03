@@ -1,12 +1,13 @@
 import pymysql
 from tools.box.downloadBook.spyder import aszwDownloader, aszwParser
+from tools.box.downloadBook.camouflage import cookies
 import sys
 
 
 class dbc:
     def __init__(self, dbName):
         # 初始化数据库连接
-        self.db = pymysql.connect(host="localhost", user="root", password="123456", port=3306, db=dbName,
+        self.db = pymysql.connect(host="localhost", user="root", password="sujie1997", port=3306, db=dbName,
                                   charset='utf8')
         # 初始化书籍仓库列表
         self.book_warehouse = []
@@ -23,14 +24,14 @@ class dbc:
             、auth(作者)、(create_date)书籍初次存入时间、wordage(字数)
         :return:
         '''
-        print('-----开始插入书籍：',book['name'],'-----')
+        print('-----开始插入书籍：', book['name'], '-----')
         cursor = self.db.cursor()
         # 插入书本信息
-        sql = "insert into books(bookName,bookCategory,bookAuth,bookWordage,bookURL,source) values(%s,%s,%s,%s,%s,%s,%s)"
+        sql = "insert into books(bookName,bookCategory,bookAuth,bookWordage,bookURL,source) values(%s,%s,%s,%s,%s,%s)"
         try:
             # 执行插入sql语句
             cursor.execute(sql, (
-                book['name'], book['category'], book['auth'],int(book['wordage']),
+                book['name'], book['category'], book['auth'], int(book['wordage']),
                 book['book_url'], book['source']))
             # 提交事务
             self.db.commit()
@@ -57,13 +58,11 @@ class dbc:
                         self.db.rollback()
                         s = sys.exc_info()
                         print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
-                        print(e)
-                print('-----书籍：',book['name'],'插入成功-----')
+                print('-----书籍：', book['name'], '插入成功-----')
 
             except Exception as e:
                 s = sys.exc_info()
                 print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
-                print(e)
 
         except Exception as e:
             # 若出错，事务回滚
@@ -71,6 +70,77 @@ class dbc:
             s = sys.exc_info()
             print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
             return False
+
+    def initCookies(self):
+        '''
+        使用account表中的用户名和密码获取cookie，存入数据库中
+        :return:
+        '''
+
+        # 查询account中储存的23zw网的用户
+        sql = "select * from account where source=%s"
+        cursor = self.db.cursor()
+        cursor.execute(sql, (1))
+        row = cursor.fetchone()
+        users = []
+        while row:
+            user = {}
+            user['user_name'] = row[1]
+            user['password'] = row[2]
+            users.append(user)
+            row = cursor.fetchone()
+
+        # 用账户去模拟登陆23zw网，获取cookie
+        i=1
+        for cookie in cookies.run(users):
+            self.insertCookie({'content':cookie['content'],'state':True,'userID':i})
+            i+=1
+
+    def insertCookie(self,cookie):
+        '''
+        将cookie存入数据库中
+        :param cookie: 应包括的key:content state userID
+        :return:
+        '''
+
+        # 执行插入cookie的sql语句
+        sql="insert into cookies(content, state, userID) VALUES (%s,%s,%s)"
+        cursor=self.db.cursor()
+        try:
+            # 执行插入sql
+            print(cookie)
+            cursor.execute(sql,(str(cookie['content']),cookie['state'],cookie['userID']))
+            # 提交事务
+            self.db.commit()
+            print('cookie',cookie['userID'],'插入成功→→→→→→→')
+        except Exception as e:
+            # 若出错，回滚事务
+            self.db.rollback()
+            s = sys.exc_info()
+            print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
+
+
+
+    def addAccount(self, user):
+        '''
+        添加一个账户到数据库中
+        :param user: user应包含keys: name password source
+        :return:
+        '''
+
+        # 执行sql语句，讲账户信息插入到数据库中
+        sql = "insert into account(name,password,source) values(%s,%s,%s)"
+        cursor = self.db.cursor()
+        try:
+            # 执行插入sql
+            cursor.execute(sql, (user['name'], user['password'], user['source']))
+            # 提交事务
+            self.db.commit()
+        except Exception as e:
+            # 若出错，回滚事务
+            self.db.rollback()
+            s = sys.exc_info()
+            print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
 
     def initDatebase(self):
         '''
@@ -91,23 +161,22 @@ class dbc:
             for book_url in books_urls:
                 # 解析主页得到章节url列表、书名、类别、作者
                 sections_url, title, category, auth = parser.find_section_urls(book_url)
-                book={}
+                book = {}
                 book['name'] = title
                 book['category'] = category
                 book['auth'] = auth
                 book['wordage'] = -1
                 book['book_url'] = book_url
-                book['source']=1
-                chapters=[]
+                book['source'] = 1
+                chapters = []
                 for section_url in sections_url:
                     # 遍历章节页面，解析出章节名和正文
                     html_cont = downloader.m_download(section_url)
                     new_data = parser.parser_Section(html_cont)
                     # 将章节名和章节url存入chapters
-                    chapter={'chapter_name':new_data['section_title'],'chapter_url':section_url}
+                    chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
                     chapters.append(chapter)
                 # 章节信息列表存入book中
-                book['chapters']=chapters
+                book['chapters'] = chapters
                 self.insetBook(book)
                 self.book_warehouse.append(book)
-

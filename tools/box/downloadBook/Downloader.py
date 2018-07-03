@@ -3,10 +3,11 @@
 import urllib.request
 import urllib.parse
 
+
 class Downloader(object):
 
-    def m_download(self,url, user_agent='Mr.Zhang', proxy=None, num_retries=2):
-        headers = {'User-agent': user_agent}
+    def m_download(self, cookie, url, user_agent='Mr.Zhang', proxy=None, num_retries=2):
+        headers = {'User-agent': user_agent, 'cookie': cookie}
         request = urllib.request.Request(url, headers=headers)
 
         opener = urllib.request.build_opener()
