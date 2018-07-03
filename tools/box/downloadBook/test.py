@@ -35,10 +35,16 @@ def testInitCookies():
     dbC = dbController.dbc('bookwarehouse')
     dbC.initCookies()
 
+def testGetCookies():
+    dbC = dbController.dbc('bookwarehouse')
+    for cookie in dbC.getCookies():
+        print(cookie)
+
 
 if __name__ == '__main__':
     # testInsertBook()
     # testfind_section_urls()
-    # testInitDatabase()
+    testInitDatabase()
     # testAddAccount()
-    testInitCookies()
+    # testInitCookies()
+    # testGetCookies()

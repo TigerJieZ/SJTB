@@ -6,8 +6,9 @@ import urllib.parse
 
 class Downloader:
 
-    def m_download(self, url, user_agent='Mr.Zhang', proxy=None, num_retries=2):
-        headers = {'User-agent': user_agent}
+    def m_download(self, url, cookie,user_agent='Mr.Zhang', proxy=None, num_retries=2):
+        headers = {'User-agent': user_agent,'cookie':cookie['content']}
+        print(cookie['content'])
         request = urllib.request.Request(url, headers=headers)
 
         opener = urllib.request.build_opener()

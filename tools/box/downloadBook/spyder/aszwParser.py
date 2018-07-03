@@ -5,7 +5,7 @@ import re
 import urllib.request
 import sys
 
-class aszwParser:
+class Parser:
     '''http://baike.baidu.com/view/2975166.htm'''
 
     def __init__(self):

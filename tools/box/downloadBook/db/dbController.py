@@ -2,6 +2,7 @@ import pymysql
 from tools.box.downloadBook.spyder import aszwDownloader, aszwParser
 from tools.box.downloadBook.camouflage import cookies
 import sys
+import random
 
 
 class dbc:
@@ -148,8 +149,9 @@ class dbc:
         :return:
         '''
         # 初始化解析模块
-        parser = aszwParser.aszwParser()
+        parser = aszwParser.Parser()
         downloader = aszwDownloader.Downloader()
+        cookies = self.getCookies()
 
         # 从傲视中文网的书籍列表中把列表url爬取下来
         list_url = parser.find_list_urls()
@@ -170,8 +172,10 @@ class dbc:
                 book['source'] = 1
                 chapters = []
                 for section_url in sections_url:
+                    # 从cookie库中随机获取一个cookie用于下载页面
+                    cookie = cookies[random.randint(0, 10)]
                     # 遍历章节页面，解析出章节名和正文
-                    html_cont = downloader.m_download(section_url)
+                    html_cont = downloader.m_download(section_url,cookie)
                     new_data = parser.parser_Section(html_cont)
                     # 将章节名和章节url存入chapters
                     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
@@ -180,3 +184,22 @@ class dbc:
                 book['chapters'] = chapters
                 self.insetBook(book)
                 self.book_warehouse.append(book)
+
+    def getCookies(self):
+        '''
+        获取所有cookies
+        :return:
+        '''
+        sql="select * from cookies"
+        cursor=self.db.cursor()
+        cursor.execute(sql)
+        row=cursor.fetchone()
+        cookies=[]
+        while row:
+            cookie={}
+            cookie['content']=row[1]
+            cookie['state']=row[2]
+            cookies.append(cookie)
+            row=cursor.fetchone()
+        print('数据库中cookie数：',len(cookies))
+        return cookies
