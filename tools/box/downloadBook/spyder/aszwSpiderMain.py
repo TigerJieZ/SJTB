@@ -6,6 +6,7 @@ import random
 
 from tools.box.downloadBook.spyder import aszwDownloader, aszwParser, aszwWriter
 from tools.box.downloadBook.db import dbController
+from tools.box.downloadBook.camouflage import proxies
 
 # 小说目录
 home = "http://www.23zw.me/olread/68/68913/"
@@ -17,7 +18,11 @@ class SpiderMain(object):
     def __init__(self):
         self.downloader = aszwDownloader.Downloader()
         self.parser = aszwParser.Parser()
+
+        # cookie库
         self.cookies = dbController.dbc('bookwarehouse').getCookies()
+        # 代理库
+        self.proxies = proxies.get_proxy('http://www.xicidaili.com/nn/',{'User-agent': 'Mr.Zhang'})
 
     def process_book(self, section_urls, title):
         print('setction nume is:' + str(len(section_urls)))
@@ -27,7 +32,8 @@ class SpiderMain(object):
         def process_section(url, title):
             try:
                 cookie = self.cookies[random.randint(0, 9)]
-                html_cont = self.downloader.m_download(url=url, cookie=cookie)
+                proxy = random.choice(self.proxies)
+                html_cont = self.downloader.m_download(url=url, cookie=cookie,proxy=proxy,user_agent='Mr.zhang')
                 new_data = self.parser.parser_Section(html_cont)
                 self.outputer.collect_data(new_data, title)
                 print("第" + "%d" % new_data['section_title'] + "章" + "下载中...")

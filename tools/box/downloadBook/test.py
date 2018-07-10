@@ -2,6 +2,7 @@ import sys
 sys.path.append('/home/ubuntu/Python_Workspace/SJTB/')
 from tools.box.downloadBook.spyder import aszwParser
 from tools.box.downloadBook.db import dbController
+from tools.box.downloadBook.camouflage import proxies
 
 def testInsertBook():
     chapters=[{'chapter_name':'第一章','chapter_url':'https://www.23zw.me/olread/68/68913/c10f9c35044ae520694a837c12ecf81e.html'},
@@ -40,6 +41,14 @@ def testGetCookies():
     for cookie in dbC.getCookies():
         print(cookie)
 
+def testGetIP():
+    proxies.get_ip_list('http://www.xicidaili.com/wt',{'User-agent': 'Mr.Zhang'})
+
+def testGetPort():
+    proxies.get_port_list('http://www.xicidaili.com/wt',{'User-agent': 'Mr.Zhang'})
+
+def testGetProxy():
+    proxies.get_proxy('http://www.xicidaili.com/wt',{'User-agent': 'Mr.Zhang'})
 
 if __name__ == '__main__':
     # testInsertBook()
@@ -48,3 +57,6 @@ if __name__ == '__main__':
     # testAddAccount()
     # testInitCookies()
     # testGetCookies()
+    # testGetProxies()
+    # testGetPort()
+    # testGetProxy()
