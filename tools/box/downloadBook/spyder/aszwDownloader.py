@@ -12,8 +12,10 @@ class Downloader:
 
         opener = urllib.request.build_opener()
         if proxy:
-            proxy_params = {urllib.parse.urlparse(url).scheme: proxy}
-            opener.add_handler(urllib.request.ProxyHandler(proxy_params))
+            print(proxy)
+            # 使用选择的代理构建代理处理器对象
+            httpproxy_handler = urllib.request.ProxyHandler(proxy)
+            opener = urllib.request.build_opener(httpproxy_handler)
         try:
             html = opener.open(request).read()
         except urllib.request.URLError as e:

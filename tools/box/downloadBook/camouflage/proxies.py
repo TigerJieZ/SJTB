@@ -1,6 +1,8 @@
 import urllib.request
 import re
 import telnetlib
+import _thread
+import time
 
 url = 'http://www.xicidaili.com/nn/'
 
@@ -62,7 +64,7 @@ def get_port_list(url, headers):
     port_list = []
     for port in ul_list:
         port = port[1:-1]
-        port_list.append(int(port))
+        port_list.append(port)
     port_list = port_list[:-11]
     print('共找到代理端口：', len(port_list), '个')
     return port_list
@@ -90,6 +92,7 @@ def find_proxy(url, headers):
 
     return proxy_list
 
+
 def formatProxy(proxy_list):
     '''
     格式化proxy，正确的proxy格式为：
@@ -100,11 +103,10 @@ def formatProxy(proxy_list):
     :param proxy_list:
     :return:
     '''
-    list=[]
+    list = []
     for proxy in proxy_list:
-        temp={}
-        temp['http']='http://'+proxy['ip']+':'+proxy['port']
-        temp['https']='http://'+proxy['ip']+':'+proxy['port']
+        temp = {}
+        temp['http'] = proxy['ip'] + ':' + proxy['port']
         list.append(temp)
 
     return list
@@ -124,13 +126,15 @@ def get_proxy(url, headers):
     ava_proxy_list = check(proxy_list)
 
     # 格式化proxy
-    result=formatProxy(ava_proxy_list)
+    result = formatProxy(ava_proxy_list[:-20])
 
     return result
 
 
 def check(proxy_list):
-    
+    ava_proxy_list = []
+    threads = 1
+
     def checkAvailability(proxy):
         '''
         检验单个proxy的可用性
@@ -141,15 +145,31 @@ def check(proxy_list):
             telnetlib.Telnet(proxy['ip'], port=proxy['port'], timeout=20)
         except:
             print('----', proxy['ip'], ':', proxy['port'], '失效！')
-            return False
         else:
             print('++++', proxy['ip'], ':', proxy['port'], '有效！')
-            return True
-
-    ava_proxy_list = []
-    for proxy in proxy_list:
-        if (checkAvailability(proxy)):
             ava_proxy_list.append(proxy)
+        nonlocal threads
+        threads -= 1
+
+    i = 1
+    while proxy_list:
+        # # the crawl is still active
+        # for m_thread in threads:
+        #     if not m_thread.is_alive():
+        #         # remove the stopped threads
+        #         threads.remove(m_thread)
+        while threads < 20 and proxy_list:
+            threads += 1
+            print('线程数：', threads)
+            print('第', i, '个proxy检验中.......')
+            proxy = proxy_list.pop()
+            print(_thread.start_new_thread(checkAvailability, (proxy,)))
+            i += 1
+        time.sleep(0.1)
+
+    # 等待剩余线程结束
+    while threads > 1:
+        print('线程数：',threads)
 
     print('可用代理有', len(ava_proxy_list), '个')
     return ava_proxy_list

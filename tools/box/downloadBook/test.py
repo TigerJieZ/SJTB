@@ -48,7 +48,7 @@ def testGetPort():
     proxies.get_port_list('http://www.xicidaili.com/wt',{'User-agent': 'Mr.Zhang'})
 
 def testGetProxy():
-    proxies.get_proxy('http://www.xicidaili.com/wt',{'User-agent': 'Mr.Zhang'})
+    proxies.get_proxy('http://www.xicidaili.com/nn',{'User-agent': 'Mr.Zhang'})
 
 if __name__ == '__main__':
     # testInsertBook()
