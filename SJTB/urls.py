@@ -19,5 +19,7 @@ from tools import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tools/e-book',views.downloadBook)
+    path('tools/', views.toolsIndex),
+    path('tools/e-book', views.downloadBook),
+    path('tools/e-book/search', views.searchBookAction)
 ]

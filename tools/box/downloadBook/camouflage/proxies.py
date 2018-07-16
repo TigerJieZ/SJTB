@@ -169,7 +169,8 @@ def check(proxy_list):
 
     # 等待剩余线程结束
     while threads > 1:
-        print('线程数：',threads)
+        # print('线程数：',threads)
+        pass
 
     print('可用代理有', len(ava_proxy_list), '个')
     return ava_proxy_list

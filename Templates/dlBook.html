@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>电子书下载器</title>
+</head>
+<!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+<link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+<!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
+<link rel="stylesheet" href="{% static "css/bootstrap-theme.min.css" %}" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+<!-- 搜索框的css文件 -->
+<link rel="stylesheet" href="{% static "css/search.css" %}">
+
+
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<!-- jquery文件需在bootstrap之前引入，否则下拉菜单无法弹出 -->
+<script src="{% static "js/jquery.min.js" %}"></script>
+<script src="{% static "js/bootstrap_3.3.7_js_bootstrap.min.js" %}"></script>
+
+{# 图标 #}
+<link rel="icon" href="{% static "img/dlBook-icon.jpg" %}">
+<body><br>
+<div class="container" style="width:90%">
+	<div class="row clearfix">
+		<div class="col-md-12 column">
+			<nav class="navbar navbar-default navbar-inverse" role="navigation">
+				<div class="navbar-header">
+					 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                         <span class="sr-only">Toggle navigation</span>
+                         <span class="icon-bar"></span>
+                         <span class="icon-bar"></span>
+                         <span class="icon-bar"></span></button>
+                    <a class="navbar-brand" href="/tools">首页</a>
+				</div>
+				
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li class="active">
+							 <a href="#">工具箱</a>
+						</li>
+						<li>
+							 <a href="#">文摘阁</a>
+						</li>
+					</ul>
+					<ul class="nav navbar-nav navbar-right">
+						<li>
+							 <a href="#">Link</a>
+						</li>
+						<li class="dropdown">
+							 <a href="#" class="dropdown-toggle" data-toggle="dropdown">用户<strong class="caret"></strong></a>
+							<ul class="dropdown-menu" aria-labelledby="dropdownMenu" >
+								<li>
+									 <a href="#">Action</a>
+								</li>
+								<li>
+									 <a href="#">Another action</a>
+								</li>
+								<li>
+									 <a href="#">Something else here</a>
+								</li>
+								<li class="divider">
+								</li>
+								<li>
+									 <a href="#">Separated link</a>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+				
+			</nav>
+		</div>
+	</div>
+	<div class="row clearfix">
+		<div class="col-md-1 column">
+		</div>
+		<div class="col-md-8 column">
+            <div class="search mbar6">
+                <form action="/tools/e-book/search" method="post">
+                    {% csrf_token %}
+                    <input type="text" placeholder="请输入书名" name="book_name">
+                    <button type="submit"></button>
+                </form>
+            搜索的关键字为：{{ book_name }}<br>
+            搜索书籍列表为：<br>
+                {% for book in books%}
+                    <div class="col-md-4">
+                        <div class="thumbnail">
+                            <img alt="300x200" src="{% static "img/电子书缩略图.jpg" %}" />
+                            <div class="caption">
+                                <center><h3>
+                                    {{ book.name }}
+                                </h3></center>
+                                <p style="float: right">
+                                    类别：{{ book.category }}&emsp;&emsp;作者：{{ book.auth }}
+                                </p>
+                                <p style="float: left">
+                                    &emsp;&emsp;小说简介部分
+                                </p><br>
+                                <p style="float:right">
+                                     <a class="btn btn-primary" href="e-book">下载</a>
+                                </p><br><br>
+                            </div>
+                        </div>
+				    </div>
+                {% endfor %}
+            </div>
+
+		</div>
+		<div class="col-md-3 column">
+		</div>
+	</div>
+</div>
+</body>
+</html>

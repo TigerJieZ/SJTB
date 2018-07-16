@@ -1,3 +1,5 @@
+import _thread
+
 import pymysql
 from tools.box.downloadBook.spyder import aszwDownloader, aszwParser
 from tools.box.downloadBook.camouflage import cookies
@@ -93,12 +95,12 @@ class dbc:
             row = cursor.fetchone()
 
         # 用账户去模拟登陆23zw网，获取cookie
-        i=1
+        i = 1
         for cookie in cookies.run(users):
-            self.insertCookie({'content':cookie['content'],'state':True,'userID':i})
-            i+=1
+            self.insertCookie({'content': cookie['content'], 'state': True, 'userID': i})
+            i += 1
 
-    def insertCookie(self,cookie):
+    def insertCookie(self, cookie):
         '''
         将cookie存入数据库中
         :param cookie: 应包括的key:content state userID
@@ -106,22 +108,20 @@ class dbc:
         '''
 
         # 执行插入cookie的sql语句
-        sql="insert into cookies(content, state, userID) VALUES (%s,%s,%s)"
-        cursor=self.db.cursor()
+        sql = "insert into cookies(content, state, userID) VALUES (%s,%s,%s)"
+        cursor = self.db.cursor()
         try:
             # 执行插入sql
             print(cookie)
-            cursor.execute(sql,(str(cookie['content']),cookie['state'],cookie['userID']))
+            cursor.execute(sql, (str(cookie['content']), cookie['state'], cookie['userID']))
             # 提交事务
             self.db.commit()
-            print('cookie',cookie['userID'],'插入成功→→→→→→→')
+            print('cookie', cookie['userID'], '插入成功→→→→→→→')
         except Exception as e:
             # 若出错，回滚事务
             self.db.rollback()
             s = sys.exc_info()
             print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
-
-
 
     def addAccount(self, user):
         '''
@@ -153,7 +153,7 @@ class dbc:
         parser = aszwParser.Parser()
         downloader = aszwDownloader.Downloader()
         cookies = self.getCookies()
-        user_agent=self.getUserAgent()
+        user_agent = self.getUserAgent()
         proxy_list = proxies.get_proxy('http://www.xicidaili.com/nn/', {'User-agent': 'Mr.Zhang'})
 
         # 从傲视中文网的书籍列表中把列表url爬取下来
@@ -167,6 +167,7 @@ class dbc:
                 # 解析主页得到章节url列表、书名、类别、作者
                 sections_url, title, category, auth = parser.find_section_urls(book_url)
                 book = {}
+                print('----正在爬取书籍：',title)
                 book['name'] = title
                 book['category'] = category
                 book['auth'] = auth
@@ -174,16 +175,46 @@ class dbc:
                 book['book_url'] = book_url
                 book['source'] = 1
                 chapters = []
-                for section_url in sections_url:
+
+                # 解析章节信息存入chapters
+                def parseSction(section_url):
                     # 从cookie库中随机获取一个cookie用于下载页面
                     cookie = cookies[random.randint(0, 10)]
                     proxy = random.choice(proxy_list)
                     # 遍历章节页面，解析出章节名和正文
-                    html_cont = downloader.m_download(section_url,cookie=cookie,user_agent=random.choice(user_agent),proxy=proxy)
+                    html_cont = downloader.m_download(section_url, cookie=cookie, user_agent=random.choice(user_agent),
+                                                      proxy=proxy)
                     new_data = parser.parser_Section(html_cont)
+
+                    # 使用外部变量
+                    nonlocal threads, chapters
+
                     # 将章节名和章节url存入chapters
                     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
                     chapters.append(chapter)
+
+                    # 退出线程，线程数-1
+                    threads -= 1
+
+                # 多线程访问
+                threads = 0
+                i = 1
+                while sections_url:
+                    while sections_url and threads < 20:
+                        threads += 1
+                        section_url = sections_url.pop()
+                        _thread.start_new_thread(parseSction, (section_url,))
+                        i += 1
+                # for section_url in sections_url:
+                #     # 从cookie库中随机获取一个cookie用于下载页面
+                #     cookie = cookies[random.randint(0, 10)]
+                #     proxy = random.choice(proxy_list)
+                #     # 遍历章节页面，解析出章节名和正文
+                #     html_cont = downloader.m_download(section_url,cookie=cookie,user_agent=random.choice(user_agent),proxy=proxy)
+                #     new_data = parser.parser_Section(html_cont)
+                #     # 将章节名和章节url存入chapters
+                #     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
+                #     chapters.append(chapter)
                 # 章节信息列表存入book中
                 book['chapters'] = chapters
                 self.insetBook(book)
@@ -234,18 +265,39 @@ class dbc:
         获取所有cookies
         :return:
         '''
-        sql="select * from cookies"
-        cursor=self.db.cursor()
+        sql = "select * from cookies"
+        cursor = self.db.cursor()
         cursor.execute(sql)
-        row=cursor.fetchone()
-        cookies=[]
+        row = cursor.fetchone()
+        cookies = []
         while row:
-            cookie={}
-            cookie['content']=row[1]
-            cookie['state']=row[2]
-            id=row[3]
+            cookie = {}
+            cookie['content'] = row[1]
+            cookie['state'] = row[2]
+            id = row[3]
             # 查询user
             cookies.append(cookie)
-            row=cursor.fetchone()
-        print('数据库中cookie数：',len(cookies))
+            row = cursor.fetchone()
+        print('数据库中cookie数：', len(cookies))
         return cookies
+
+    def searchBookKey(self,key_bookName):
+        '''
+        查询书名匹配列表
+        :return:
+        '''
+        cursor=self.db.cursor()
+        sql="select * from books where bookName like %s"
+        cursor.execute(sql,('%'+key_bookName+'%'))
+        books=[]
+        row=cursor.fetchone()
+        while row:
+            book={}
+            book['name']=row[1]
+            book['category']=row[2]
+            book['auth']=row[3]
+            book['source']=row[8]
+            books.append(book)
+            row = cursor.fetchone()
+
+        return books
