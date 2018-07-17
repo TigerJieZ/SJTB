@@ -144,9 +144,10 @@ def check(proxy_list):
         try:
             telnetlib.Telnet(proxy['ip'], port=proxy['port'], timeout=20)
         except:
-            print('----', proxy['ip'], ':', proxy['port'], '失效！')
+            # print('----', proxy['ip'], ':', proxy['port'], '失效！')
+            pass
         else:
-            print('++++', proxy['ip'], ':', proxy['port'], '有效！')
+            # print('++++', proxy['ip'], ':', proxy['port'], '有效！')
             ava_proxy_list.append(proxy)
         nonlocal threads
         threads -= 1
@@ -158,14 +159,15 @@ def check(proxy_list):
         #     if not m_thread.is_alive():
         #         # remove the stopped threads
         #         threads.remove(m_thread)
-        while threads < 20 and proxy_list:
+        while threads < 40 and proxy_list:
             threads += 1
-            print('线程数：', threads)
-            print('第', i, '个proxy检验中.......')
+            # print('线程数：', threads)
+            # print('第', i, '个proxy检验中.......')
             proxy = proxy_list.pop()
-            print(_thread.start_new_thread(checkAvailability, (proxy,)))
+            _thread.start_new_thread(checkAvailability, (proxy,))
+            # print(_thread.start_new_thread(checkAvailability, (proxy,)))
             i += 1
-        time.sleep(0.1)
+        # time.sleep(0.1)
 
     # 等待剩余线程结束
     while threads > 1:

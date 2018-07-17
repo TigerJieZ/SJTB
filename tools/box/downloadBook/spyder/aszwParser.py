@@ -164,7 +164,7 @@ class Parser:
         title_c = re.compile(title_key)
         try:
             title = re.findall(title_c, title)[0]
-            print(title, '-------', self.get_titleIndex(title))
+            # print(title, '-------', self.get_titleIndex(title))
             res_data['section_title'] = self.get_titleIndex(title)
         except IndexError:
             print("章节名解析失败")
@@ -172,6 +172,7 @@ class Parser:
             res_data['section_title'] = -1
 
         return res_data
+
 
     def find_books_urls(self, list_url):
         books_urls = set()

@@ -1,5 +1,7 @@
+from django.http import FileResponse
 from django.shortcuts import render
 from tools.box.downloadBook.db.dbController import dbc
+import threading
 
 
 # Create your views here.
@@ -13,7 +15,7 @@ def toolsIndex(request):
     return render(request, "tools_index.html")
 
 
-def downloadBook(request):
+def downloadBookView(request):
     '''
     电子书下载器页面
     :param request:
@@ -44,3 +46,34 @@ def searchBookAction(request):
 
 
     return render(request,'dlBook.html')
+
+def downloadBook(request):
+    '''
+    下载书籍
+    :param request:
+    :return:
+    '''
+    # 存放数据提交内容
+    ctx = {}
+    bookID=request.GET.get('id')
+    dbC=dbc('bookwarehouse')
+    path=""
+
+    def get():
+        '''
+        子线程用于下载小说
+        '''
+        nonlocal path
+        path=dbC.getBook(bookID)
+        ctx['path']=path
+        response = FileResponse(path)
+        response['Content-Type'] = 'application/octet-stream'
+        response['Content-Disposition'] = 'attachment;filename="example.tar.gz"'
+        return response
+
+    book_thread=threading.Thread(target=get)
+
+    book_thread.start()
+
+    return render(request,'SUCCESS.html',ctx)
+

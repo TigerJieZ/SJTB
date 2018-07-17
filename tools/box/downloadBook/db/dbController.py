@@ -1,7 +1,7 @@
 import _thread
 
 import pymysql
-from tools.box.downloadBook.spyder import aszwDownloader, aszwParser
+from tools.box.downloadBook.spyder import aszwDownloader, aszwParser, aszwWriter
 from tools.box.downloadBook.camouflage import cookies
 from tools.box.downloadBook.camouflage import proxies
 import sys
@@ -167,7 +167,7 @@ class dbc:
                 # 解析主页得到章节url列表、书名、类别、作者
                 sections_url, title, category, auth = parser.find_section_urls(book_url)
                 book = {}
-                print('----正在爬取书籍：',title)
+                print('----正在爬取书籍：', title)
                 book['name'] = title
                 book['category'] = category
                 book['auth'] = auth
@@ -281,23 +281,107 @@ class dbc:
         print('数据库中cookie数：', len(cookies))
         return cookies
 
-    def searchBookKey(self,key_bookName):
+    def searchBookKey(self, key_bookName):
         '''
         查询书名匹配列表
         :return:
         '''
-        cursor=self.db.cursor()
-        sql="select * from books where bookName like %s"
-        cursor.execute(sql,('%'+key_bookName+'%'))
-        books=[]
-        row=cursor.fetchone()
+        cursor = self.db.cursor()
+        sql = "select * from books where bookName like %s"
+        cursor.execute(sql, ('%' + key_bookName + '%'))
+        books = []
+        row = cursor.fetchone()
         while row:
-            book={}
-            book['name']=row[1]
-            book['category']=row[2]
-            book['auth']=row[3]
-            book['source']=row[8]
+            book = {}
+            book['id'] = row[0]
+            book['name'] = row[1]
+            book['category'] = row[2]
+            book['auth'] = row[3]
+            book['source'] = row[8]
             books.append(book)
             row = cursor.fetchone()
 
         return books
+
+    def getBook(self, id):
+        '''
+        下载书籍至服务器
+        :param id:
+        :return:
+        '''
+
+        # 获取书目url
+        cursor = self.db.cursor()
+        sql = "select * from books where id = %s"
+        cursor.execute(sql, (id))
+        row = cursor.fetchone()
+        book_url = row[7]
+
+        # 初始化解析模块
+        parser = aszwParser.Parser()
+        downloader = aszwDownloader.Downloader()
+        cookies = self.getCookies()
+        user_agent = self.getUserAgent()
+
+        proxy_list = proxies.get_proxy('http://www.xicidaili.com/nn/', {'User-agent': 'Mr.Zhang'})
+
+        # 解析主页得到章节url列表、书名、类别、作者
+        sections_url, title, category, auth = parser.find_section_urls(book_url)
+        print('----正在爬取书籍：', title)
+        chapters = []
+
+        # 若存在书籍
+        if os.path.exists("/home/ubuntu/book/" + title + "_" + id + ".txt"):
+            print(title + "已下载。。。")
+
+        # 书籍内容抓取器
+        outputer = aszwWriter.Writer(len(sections_url))
+
+        # 解析章节信息存入chapters
+        def parseSction(section_url):
+            try:
+                # 从cookie库中随机获取一个cookie用于下载页面
+                cookie = cookies[random.randint(0, 10)]
+                proxy = random.choice(proxy_list)
+                # 遍历章节页面，解析出章节名和正文
+                html_cont = downloader.m_download(section_url, cookie=cookie, user_agent=random.choice(user_agent),
+                                                  proxy=proxy)
+                new_data = parser.parser_Section(html_cont)
+
+                # print('爬取第',new_data['section_title'],'章成功')
+
+                # 收集章节内容以便章节爬取结束后写入文件
+                outputer.collect_data(new_data, title)
+
+                # 使用外部变量
+                nonlocal threads, chapters
+
+                # 将章节名和章节url存入chapters
+                chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url,
+                           'chapter_context': new_data['text']}
+                chapters.append(chapter)
+            except Exception as e:
+                print(e)
+            finally:
+                # threads线程必须放置在finally中-1，否则当该函数出现bug停掉，则threads不会被-1
+                # 退出线程，线程数-1
+                threads-=1
+
+        # 多线程解析章节内容
+        threads = 0
+        print('需解析的章节数:',len(sections_url))
+        while sections_url:
+            while sections_url and threads < 40:
+                # print(threads)
+                threads += 1
+                section_url = sections_url.pop()
+                _thread.start_new_thread(parseSction, (section_url,))
+
+        while threads > 0:
+            # print('已爬取',sum1,'已进入爬取',sum2)
+            # print(threads)
+            pass
+
+        print('开始写入书籍至本地')
+        # 写入书籍内容到文件
+        print(outputer.output_html(id))
