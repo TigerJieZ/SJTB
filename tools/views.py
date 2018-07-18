@@ -69,7 +69,6 @@ def downloadBook(request):
         response = FileResponse(path)
         response['Content-Type'] = 'application/octet-stream'
         response['Content-Disposition'] = 'attachment;filename="example.tar.gz"'
-        return response
 
     book_thread=threading.Thread(target=get)
 

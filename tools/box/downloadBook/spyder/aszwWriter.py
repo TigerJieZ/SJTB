@@ -4,15 +4,15 @@ import os
 
 
 class Writer:
-    def __init__(self, length):
+    def __init__(self, length, title, auth):
         self.datas = list(range(0, length))
-        self.title = ""
+        self.title = title
+        self.auth = auth
 
-    def collect_data(self, data, title):
+    def collect_data(self, data):
         if data is None:
             return
         self.datas[data['section_title']] = data
-        self.title = title
 
     def output_html_old(self):
         try:
@@ -32,16 +32,16 @@ class Writer:
                     print("%d" % data['section_title'] + "写入失败")
                 fout.close()
 
-    def output_html(self, id):
+    def output_html(self):
         print('解析成功的章节数：', len(self.datas))
         try:
             os.mkdir("/home/ubuntu/book/")
         except:
             print("书包目录已存在")
-        if os.path.exists("/home/ubuntu/book/" + self.title + "_" + id + ".txt"):
+        if os.path.exists("/home/ubuntu/book/" + self.title + "_" + self.auth + ".txt"):
             print(self.title + "已下载。。。")
         else:
-            fout = open("/home/ubuntu/book/" + self.title + "_" + id + ".txt", 'a')
+            fout = open("/home/ubuntu/book/" + self.title + "_" + self.auth + ".txt", 'a')
             for data in self.datas:
                 try:
                     fout.write("第" + str(data['section_title']) + "章")

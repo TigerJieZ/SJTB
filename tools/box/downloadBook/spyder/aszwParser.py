@@ -43,13 +43,13 @@ class Parser:
                 print('书籍类别解析失败')
                 s = sys.exc_info()
                 print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
-
-            str = ls[0]
             s_key = '作者：(.+?) |'
             re_c = re.compile(s_key)
             ls = re.findall(re_c, str)
+
             try:
-                auth = ls[0]
+                # 很奇怪，。。。解析出来作者的内容下标为8
+                auth = ls[8]
             except Exception as e:
                 print('书籍类别解析失败')
                 s = sys.exc_info()

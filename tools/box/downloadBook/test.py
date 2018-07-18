@@ -3,6 +3,7 @@ sys.path.append('/home/ubuntu/Python_Workspace/SJTB/')
 from tools.box.downloadBook.spyder import aszwParser
 from tools.box.downloadBook.db import dbController
 from tools.box.downloadBook.camouflage import proxies
+from tools.box.downloadBook.spyder.aszwParser import Parser
 import time
 
 def testInsertBook():
@@ -54,17 +55,23 @@ def testGetProxy():
 def testGetBook():
     start=time.time()
     dbC = dbController.dbc('bookwarehouse')
-    dbC.getBook(14)
+    dbC.getBook(18)
     print('耗时:',time.time()-start)
+
+def testFindSectionsURLs():
+    parser=Parser()
+    parser.find_section_urls('https://www.23zw.me/olread/80/80466/index.html')
+
 
 if __name__ == '__main__':
     # testInsertBook()
     # testfind_section_urls()
-    # testInitDatabase()
+    testInitDatabase()
     # testAddAccount()
     # testInitCookies()
     # testGetCookies()
     # testGetProxies()
     # testGetPort()
     # testGetProxy()
-    testGetBook()
+    # testGetBook()
+    # testFindSectionsURLs()

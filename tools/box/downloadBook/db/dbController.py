@@ -6,6 +6,7 @@ from tools.box.downloadBook.camouflage import cookies
 from tools.box.downloadBook.camouflage import proxies
 import sys
 import random
+import os
 
 
 class dbc:
@@ -176,6 +177,13 @@ class dbc:
                 book['source'] = 1
                 chapters = []
 
+                # 若存在书籍
+                if os.path.exists("/home/ubuntu/book/" + title + "_" + auth + ".txt"):
+                    print(title + "已下载。。。")
+                    continue
+
+                outputer = aszwWriter.Writer(len(sections_url),title,auth)
+
                 # 解析章节信息存入chapters
                 def parseSction(section_url):
                     # 从cookie库中随机获取一个cookie用于下载页面
@@ -193,6 +201,9 @@ class dbc:
                     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
                     chapters.append(chapter)
 
+                    # 收集章节内容以便章节爬取结束后写入文件
+                    outputer.collect_data(new_data)
+
                     # 退出线程，线程数-1
                     threads -= 1
 
@@ -200,7 +211,7 @@ class dbc:
                 threads = 0
                 i = 1
                 while sections_url:
-                    while sections_url and threads < 20:
+                    while sections_url and threads < 40:
                         threads += 1
                         section_url = sections_url.pop()
                         _thread.start_new_thread(parseSction, (section_url,))
@@ -219,6 +230,10 @@ class dbc:
                 book['chapters'] = chapters
                 self.insetBook(book)
                 self.book_warehouse.append(book)
+
+                print('开始写入书籍至本地')
+                # 写入书籍内容到文件
+                print(outputer.output_html())
 
     def getUserAgent(self):
         MY_USER_AGENT = [
@@ -331,11 +346,12 @@ class dbc:
         chapters = []
 
         # 若存在书籍
-        if os.path.exists("/home/ubuntu/book/" + title + "_" + id + ".txt"):
+        if os.path.exists("/home/ubuntu/book/" + title + "_" + auth + ".txt"):
             print(title + "已下载。。。")
+            return
 
         # 书籍内容抓取器
-        outputer = aszwWriter.Writer(len(sections_url))
+        outputer = aszwWriter.Writer(len(sections_url),title,auth)
 
         # 解析章节信息存入chapters
         def parseSction(section_url):
@@ -351,7 +367,7 @@ class dbc:
                 # print('爬取第',new_data['section_title'],'章成功')
 
                 # 收集章节内容以便章节爬取结束后写入文件
-                outputer.collect_data(new_data, title)
+                outputer.collect_data(new_data)
 
                 # 使用外部变量
                 nonlocal threads, chapters
@@ -384,4 +400,4 @@ class dbc:
 
         print('开始写入书籍至本地')
         # 写入书籍内容到文件
-        print(outputer.output_html(id))
+        print(outputer.output_html())
