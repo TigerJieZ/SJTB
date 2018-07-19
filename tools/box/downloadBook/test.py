@@ -62,11 +62,15 @@ def testFindSectionsURLs():
     parser=Parser()
     parser.find_section_urls('https://www.23zw.me/olread/80/80466/index.html')
 
+def testInitDatabaseContext():
+    dbC = dbController.dbc('bookwarehouse')
+    dbC.initDatebaseContext()
+
 
 if __name__ == '__main__':
     # testInsertBook()
     # testfind_section_urls()
-    testInitDatabase()
+    testInitDatabaseContext()
     # testAddAccount()
     # testInitCookies()
     # testGetCookies()

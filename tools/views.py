@@ -2,6 +2,7 @@ from django.http import FileResponse
 from django.shortcuts import render
 from tools.box.downloadBook.db.dbController import dbc
 import threading
+import pymysql
 
 
 # Create your views here.
@@ -46,6 +47,40 @@ def searchBookAction(request):
 
 
     return render(request,'dlBook.html')
+
+def downloadBookNew(request):
+    '''
+    下载书籍
+    :param request:
+    :return:
+    '''
+    # 存放数据提交内容
+    ctx = {}
+    bookID=request.GET.get('id')
+    dbC=dbc('bookwarehouse')
+    path=""
+
+    # 在数据库中查询指定书的主体信息
+    sql="select * from books where id=%s"
+    db = pymysql.connect(host="localhost", user="root", password="sujie1997", port=3306, db=dbName,
+                                  charset='utf8')
+    cursor=db.cursor()
+    cursor.execute(sql,(bookID))
+
+    row=cursor.fetchone()
+    book_name=row[1]
+    book_category=row[2]
+    book_auth=row[3]
+
+    # 查询书籍内容，并输出成文件形式
+    sql="select * from chapters where bookID=%s order by chapterName desc "
+    cursor.execute(sql,(bookID))
+    row=cursor.fetchone()
+    file=open('home/')
+    while row:
+
+        row=cursor.fetchone()
+
 
 def downloadBook(request):
     '''

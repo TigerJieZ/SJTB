@@ -52,10 +52,10 @@ class dbc:
 
                 # 插入书籍目录信息
                 for chapter in book['chapters']:
-                    sql = "insert into chapters(bookID, chapterName, chapterUrl) values(%s,%s,%s)"
+                    sql = "insert into chapters(bookID, chapterName, chapterUrl,context) values(%s,%s,%s,%s)"
                     try:
                         # 执行插入sql
-                        cursor.execute(sql, (int(id), chapter['chapter_name'], chapter['chapter_url']))
+                        cursor.execute(sql, (int(id), chapter['chapter_name'], chapter['chapter_url'],chapter['context']))
                         # 提交事务
                         self.db.commit()
                     except Exception as e:
@@ -234,6 +234,89 @@ class dbc:
                 print('开始写入书籍至本地')
                 # 写入书籍内容到文件
                 print(outputer.output_html())
+
+    def initDatebaseContext(self):
+        '''
+        初始化数据库：爬取整个书籍网站至数据库，包括章节内容
+        :return:
+        '''
+        # 初始化解析模块
+        parser = aszwParser.Parser()
+        downloader = aszwDownloader.Downloader()
+        cookies = self.getCookies()
+        user_agent = self.getUserAgent()
+        proxy_list = proxies.get_proxy('http://www.xicidaili.com/nn/', {'User-agent': 'Mr.Zhang'})
+
+        # 从傲视中文网的书籍列表中把列表url爬取下来
+        list_url = parser.find_list_urls()
+        # 遍历列表url得到包含书目录url的列表
+        for list in list_url:
+            # 从列表页面中解析出书url列表
+            books_urls = parser.find_books_urls(list)
+            # 遍历书的主页
+            for book_url in books_urls:
+                # 解析主页得到章节url列表、书名、类别、作者
+                sections_url, title, category, auth = parser.find_section_urls(book_url)
+                book = {}
+                print('----正在爬取书籍：', title)
+                book['name'] = title
+                book['category'] = category
+                book['auth'] = auth
+                book['wordage'] = -1
+                book['book_url'] = book_url
+                book['source'] = 1
+                chapters = []
+
+                # 若存在书籍
+                if os.path.exists("/home/ubuntu/book/" + title + "_" + auth + ".txt"):
+                    print(title + "已下载。。。")
+                    continue
+
+
+                # 解析章节信息存入chapters
+                def parseSction(section_url):
+                    # 从cookie库中随机获取一个cookie用于下载页面
+                    cookie = cookies[random.randint(0, 10)]
+                    proxy = random.choice(proxy_list)
+                    # 遍历章节页面，解析出章节名和正文
+                    html_cont = downloader.m_download(section_url, cookie=cookie, user_agent=random.choice(user_agent),
+                                                      proxy=proxy)
+                    new_data = parser.parser_Section(html_cont)
+
+                    # 使用外部变量
+                    nonlocal threads, chapters
+
+                    # 将章节名和章节url存入chapters
+                    chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url,
+                               'context':new_data['text']}
+                    chapters.append(chapter)
+
+                    # 退出线程，线程数-1
+                    threads -= 1
+
+                # 多线程访问
+                threads = 0
+                i = 1
+                while sections_url:
+                    while sections_url and threads < 40:
+                        threads += 1
+                        section_url = sections_url.pop()
+                        _thread.start_new_thread(parseSction, (section_url,))
+                        i += 1
+                # for section_url in sections_url:
+                #     # 从cookie库中随机获取一个cookie用于下载页面
+                #     cookie = cookies[random.randint(0, 10)]
+                #     proxy = random.choice(proxy_list)
+                #     # 遍历章节页面，解析出章节名和正文
+                #     html_cont = downloader.m_download(section_url,cookie=cookie,user_agent=random.choice(user_agent),proxy=proxy)
+                #     new_data = parser.parser_Section(html_cont)
+                #     # 将章节名和章节url存入chapters
+                #     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
+                #     chapters.append(chapter)
+                # 章节信息列表存入book中
+                book['chapters'] = chapters
+                self.insetBook(book)
+                self.book_warehouse.append(book)
 
     def getUserAgent(self):
         MY_USER_AGENT = [
