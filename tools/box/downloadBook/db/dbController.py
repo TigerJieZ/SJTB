@@ -55,7 +55,8 @@ class dbc:
                     sql = "insert into chapters(bookID, chapterName, chapterUrl,context) values(%s,%s,%s,%s)"
                     try:
                         # 执行插入sql
-                        cursor.execute(sql, (int(id), chapter['chapter_name'], chapter['chapter_url'],chapter['context']))
+                        cursor.execute(sql,
+                                       (int(id), chapter['chapter_name'], chapter['chapter_url'], chapter['context']))
                         # 提交事务
                         self.db.commit()
                     except Exception as e:
@@ -182,7 +183,7 @@ class dbc:
                     print(title + "已下载。。。")
                     continue
 
-                outputer = aszwWriter.Writer(len(sections_url),title,auth)
+                outputer = aszwWriter.Writer(len(sections_url), title, auth)
 
                 # 解析章节信息存入chapters
                 def parseSction(section_url):
@@ -272,7 +273,6 @@ class dbc:
                     print(title + "已下载。。。")
                     continue
 
-
                 # 解析章节信息存入chapters
                 def parseSction(section_url):
                     # 从cookie库中随机获取一个cookie用于下载页面
@@ -288,7 +288,7 @@ class dbc:
 
                     # 将章节名和章节url存入chapters
                     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url,
-                               'context':new_data['text']}
+                               'context': new_data['text']}
                     chapters.append(chapter)
 
                     # 退出线程，线程数-1
@@ -434,7 +434,7 @@ class dbc:
             return
 
         # 书籍内容抓取器
-        outputer = aszwWriter.Writer(len(sections_url),title,auth)
+        outputer = aszwWriter.Writer(len(sections_url), title, auth)
 
         # 解析章节信息存入chapters
         def parseSction(section_url):
@@ -464,11 +464,11 @@ class dbc:
             finally:
                 # threads线程必须放置在finally中-1，否则当该函数出现bug停掉，则threads不会被-1
                 # 退出线程，线程数-1
-                threads-=1
+                threads -= 1
 
         # 多线程解析章节内容
         threads = 0
-        print('需解析的章节数:',len(sections_url))
+        print('需解析的章节数:', len(sections_url))
         while sections_url:
             while sections_url and threads < 40:
                 # print(threads)
@@ -484,3 +484,32 @@ class dbc:
         print('开始写入书籍至本地')
         # 写入书籍内容到文件
         print(outputer.output_html())
+
+    def getBookContext(self, bookID):
+        # 在数据库中查询指定书的主体信息
+        sql = "select * from books where id=%s"
+        db = self.db
+        cursor = db.cursor()
+        cursor.execute(sql, (bookID))
+
+        row = cursor.fetchone()
+        book_name = row[1]
+        book_category = row[2]
+        book_auth = row[3]
+
+        # 查询书籍内容，并输出成文件形式
+        sql = "select * from chapters where bookID=%s order by chapterName desc "
+        cursor.execute(sql, (bookID))
+        row = cursor.fetchone()
+        path = '/home/ubuntu/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
+        file = open(path, 'w')
+        while row:
+            title = row[2]
+            context = row[4]
+            file.writelines('第' + str(title) + '章')
+            file.write(context)
+            row = cursor.fetchone()
+        file.close()
+
+        return path, book_name + '_' + book_auth + '_' + book_category + '.txt'
+

@@ -1,8 +1,11 @@
-from django.http import FileResponse
+from django.http import FileResponse, StreamingHttpResponse
 from django.shortcuts import render
+from django.utils.encoding import escape_uri_path
+
 from tools.box.downloadBook.db.dbController import dbc
 import threading
 import pymysql
+import os
 
 
 # Create your views here.
@@ -54,32 +57,28 @@ def downloadBookNew(request):
     :param request:
     :return:
     '''
-    # 存放数据提交内容
-    ctx = {}
+    # 获取请求下载书籍的id
     bookID=request.GET.get('id')
+
     dbC=dbc('bookwarehouse')
-    path=""
 
-    # 在数据库中查询指定书的主体信息
-    sql="select * from books where id=%s"
-    db = pymysql.connect(host="localhost", user="root", password="sujie1997", port=3306, db=dbName,
-                                  charset='utf8')
-    cursor=db.cursor()
-    cursor.execute(sql,(bookID))
+    def file_iterator(file_name, chunk_size=512):
+        with open(file_name) as f:
+            while True:
+                c = f.read(chunk_size)
+                if c:
+                    yield c
+                else:
+                    break
+    path,file_name=dbC.getBookContext(bookID)
 
-    row=cursor.fetchone()
-    book_name=row[1]
-    book_category=row[2]
-    book_auth=row[3]
+    response = StreamingHttpResponse(file_iterator(path))
+    response['Content-Type'] = 'application/octet-stream'
+    # 中文名需如此操作才可正常在客户端显示
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(file_name))
 
-    # 查询书籍内容，并输出成文件形式
-    sql="select * from chapters where bookID=%s order by chapterName desc "
-    cursor.execute(sql,(bookID))
-    row=cursor.fetchone()
-    file=open('home/')
-    while row:
+    return response
 
-        row=cursor.fetchone()
 
 
 def downloadBook(request):
