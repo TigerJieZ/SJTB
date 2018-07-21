@@ -547,7 +547,7 @@ class dbc:
         sql = "select * from chapters where bookID=%s order by chapterName"
         cursor.execute(sql, (bookID))
         row = cursor.fetchone()
-        path = '/home/ubuntu/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
+        path = '/home/ubuntu/Python_Workspace/SJTB/static/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
         file = open(path, 'w')
         while row:
             title = row[2]
