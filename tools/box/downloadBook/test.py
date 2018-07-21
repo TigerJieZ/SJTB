@@ -23,7 +23,7 @@ def testInsertBook():
 
 def testfind_section_urls():
     url='https://www.23zw.me/olread/79/79709/index.html'
-    parser= aszwParser.aszwParser()
+    parser= aszwParser.Parser()
     parser.find_section_urls(url)
 
 def testInitDatabase():

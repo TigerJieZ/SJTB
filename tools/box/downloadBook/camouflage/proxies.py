@@ -126,7 +126,7 @@ def get_proxy(url, headers):
     ava_proxy_list = check(proxy_list)
 
     # 格式化proxy
-    result = formatProxy(ava_proxy_list[:-20])
+    result = formatProxy(ava_proxy_list)
 
     return result
 

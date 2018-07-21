@@ -62,7 +62,7 @@ def downloadBookNew(request):
 
     dbC=dbc('bookwarehouse')
 
-    def file_iterator(file_name, chunk_size=512):
+    def file_iterator(file_name, chunk_size=8192):
         with open(file_name) as f:
             while True:
                 c = f.read(chunk_size)

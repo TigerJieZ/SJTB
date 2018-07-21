@@ -13,8 +13,12 @@ class Parser:
         pass
 
     def find_section_urls(self, index_url):
-        new_urls = []
-        page = urllib.request.urlopen(index_url).read()
+        print(index_url)
+        new_urls = {}
+        try:
+            page = urllib.request.urlopen(index_url).read()
+        except:
+            return
         page = page.decode("gbk")
 
         # 解析书名
@@ -59,12 +63,15 @@ class Parser:
         s_key = 'href=\"(.{37}?)\">'
         re_c = re.compile(s_key)
         ls = re.findall(re_c, page)
+        i = 1
         for l in ls:
             try:
                 url = index_url + l
-                new_urls.append(url)
+                new_urls[i] = url
             except:
                 print("error!")
+            i += 1
+
         return new_urls, title, category, auth
 
     def myGetNumble(self, ch):
@@ -156,26 +163,12 @@ class Parser:
         res_data = {}
         text = soup.find('div', id="text_area")
         res_data['text'] = text.get_text()
-        res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
-
-        title = soup.find('div', id="chapter_title")
-        title = title.get_text()
-        title_key = r'第.*章'
-        title_c = re.compile(title_key)
-        try:
-            title = re.findall(title_c, title)[0]
-            # print(title, '-------', self.get_titleIndex(title))
-            res_data['section_title'] = self.get_titleIndex(title)
-        except IndexError:
-            print("章节名解析失败")
-            print(title)
-            res_data['section_title'] = -1
+        # res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
 
         return res_data
 
-
     def find_books_urls(self, list_url):
-        books_urls = set()
+        books_urls = []
 
         print(list_url)
         page = urllib.request.urlopen(list_url).read()
@@ -188,7 +181,7 @@ class Parser:
         ls = re.findall(re_c, page)
         for l in ls:
             try:
-                books_urls.add(l)
+                books_urls.append(l)
             except:
                 print("error!")
 

@@ -236,6 +236,25 @@ class dbc:
                 # 写入书籍内容到文件
                 print(outputer.output_html())
 
+    def checkBookExist(self, book_name, book_auth, book_category):
+        '''
+        检查该书籍是否已爬取
+        :param book_name:书名
+        :param book_auth:作者
+        :param book_category:类别
+        :return:布尔值，存在返回true，否则返回false
+        '''
+        sql = "select count(id) from books where bookName=%s and bookAuth=%s and bookCategory=%s"
+        cursor = self.db.cursor()
+        cursor.execute(sql, (book_name, book_auth, book_category))
+        row = cursor.fetchone()
+        if row[0] is 1 or row[0] is '1':
+            print('该书籍已爬取，跳过__________')
+            return True
+        else:
+            print('该书籍未爬取，进入爬取_________')
+            return False
+
     def initDatebaseContext(self):
         '''
         初始化数据库：爬取整个书籍网站至数据库，包括章节内容
@@ -257,66 +276,93 @@ class dbc:
             # 遍历书的主页
             for book_url in books_urls:
                 # 解析主页得到章节url列表、书名、类别、作者
-                sections_url, title, category, auth = parser.find_section_urls(book_url)
-                book = {}
-                print('----正在爬取书籍：', title)
-                book['name'] = title
-                book['category'] = category
-                book['auth'] = auth
-                book['wordage'] = -1
-                book['book_url'] = book_url
-                book['source'] = 1
-                chapters = []
+                try:
+                    sections_url, title, category, auth = parser.find_section_urls(book_url)
+                    book = {}
+                    print('----正在爬取书籍：', title)
+                    book['name'] = title
+                    book['category'] = category
+                    book['auth'] = auth
+                    book['wordage'] = -1
+                    book['book_url'] = book_url
+                    book['source'] = 1
+                    chapters = []
 
-                # 若存在书籍
-                if os.path.exists("/home/ubuntu/book/" + title + "_" + auth + ".txt"):
-                    print(title + "已下载。。。")
-                    continue
+                    # 若存在书籍
+                    if self.checkBookExist(title, auth, category):
+                        continue
 
-                # 解析章节信息存入chapters
-                def parseSction(section_url):
-                    # 从cookie库中随机获取一个cookie用于下载页面
-                    cookie = cookies[random.randint(0, 10)]
-                    proxy = random.choice(proxy_list)
-                    # 遍历章节页面，解析出章节名和正文
-                    html_cont = downloader.m_download(section_url, cookie=cookie, user_agent=random.choice(user_agent),
-                                                      proxy=proxy)
-                    new_data = parser.parser_Section(html_cont)
+                    # 解析章节信息存入chapters
+                    def parseSction(section_url, i):
+                        # 从cookie库中随机获取一个cookie用于下载页面
+                        cookie = cookies[random.randint(0, 10)]
+                        proxy = random.choice(proxy_list)
+                        # 遍历章节页面，解析出章节名和正文
+                        html_cont = downloader.m_download(section_url, cookie=cookie,
+                                                          user_agent=random.choice(user_agent),
+                                                          proxy=proxy)
+                        new_data = parser.parser_Section(html_cont)
 
-                    # 使用外部变量
-                    nonlocal threads, chapters
+                        # 使用外部变量
+                        nonlocal threads, chapters
 
-                    # 将章节名和章节url存入chapters
-                    chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url,
-                               'context': new_data['text']}
-                    chapters.append(chapter)
+                        # 将章节名和章节url存入chapters
+                        chapter = {'chapter_name': i, 'chapter_url': section_url,
+                                   'context': new_data['text']}
+                        chapters.append(chapter)
 
-                    # 退出线程，线程数-1
-                    threads -= 1
+                        # 退出线程，线程数-1
+                        threads -= 1
 
-                # 多线程访问
-                threads = 0
-                i = 1
-                while sections_url:
-                    while sections_url and threads < 40:
-                        threads += 1
-                        section_url = sections_url.pop()
-                        _thread.start_new_thread(parseSction, (section_url,))
-                        i += 1
-                # for section_url in sections_url:
-                #     # 从cookie库中随机获取一个cookie用于下载页面
-                #     cookie = cookies[random.randint(0, 10)]
-                #     proxy = random.choice(proxy_list)
-                #     # 遍历章节页面，解析出章节名和正文
-                #     html_cont = downloader.m_download(section_url,cookie=cookie,user_agent=random.choice(user_agent),proxy=proxy)
-                #     new_data = parser.parser_Section(html_cont)
-                #     # 将章节名和章节url存入chapters
-                #     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
-                #     chapters.append(chapter)
-                # 章节信息列表存入book中
-                book['chapters'] = chapters
-                self.insetBook(book)
-                self.book_warehouse.append(book)
+                    # 多线程访问
+                    threads = 0
+                    # 章节url的key值
+                    i = 1
+                    while sections_url:
+                        while sections_url and threads < 20:
+                            threads += 1
+                            section_url = sections_url.pop(i)
+                            _thread.start_new_thread(parseSction, (section_url, self.i2a(i),))
+                            i += 1
+                    # for section_url in sections_url:
+                    #     # 从cookie库中随机获取一个cookie用于下载页面
+                    #     cookie = cookies[random.randint(0, 10)]
+                    #     proxy = random.choice(proxy_list)
+                    #     # 遍历章节页面，解析出章节名和正文
+                    #     html_cont = downloader.m_download(section_url,cookie=cookie,user_agent=random.choice(user_agent),proxy=proxy)
+                    #     new_data = parser.parser_Section(html_cont)
+                    #     # 将章节名和章节url存入chapters
+                    #     chapter = {'chapter_name': new_data['section_title'], 'chapter_url': section_url}
+                    #     chapters.append(chapter)
+                    # 章节信息列表存入book中
+                    book['chapters'] = chapters
+                    self.insetBook(book)
+                    self.book_warehouse.append(book)
+                except Exception as e:
+                    s = sys.exc_info()
+                    print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
+                    books_urls.append(book_url)
+
+    def i2a(self, i):
+        '''
+        讲解析的章节顺序调整成按章节顺序
+        :return:
+        '''
+        remainder = i % 8
+        if remainder is 1 or remainder is 0:
+            return i
+        elif remainder is 2:
+            return i+3
+        elif remainder is 3:
+            return i-1
+        elif remainder is 4:
+            return i+2
+        elif remainder is 5:
+            return i-2
+        elif remainder is 6:
+            return i+1
+        elif remainder is 7:
+            return i-3
 
     def getUserAgent(self):
         MY_USER_AGENT = [
@@ -498,7 +544,7 @@ class dbc:
         book_auth = row[3]
 
         # 查询书籍内容，并输出成文件形式
-        sql = "select * from chapters where bookID=%s order by chapterName desc "
+        sql = "select * from chapters where bookID=%s order by chapterName"
         cursor.execute(sql, (bookID))
         row = cursor.fetchone()
         path = '/home/ubuntu/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
@@ -512,4 +558,3 @@ class dbc:
         file.close()
 
         return path, book_name + '_' + book_auth + '_' + book_category + '.txt'
-
