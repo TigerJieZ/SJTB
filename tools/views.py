@@ -72,16 +72,16 @@ def downloadBookNew(request):
                     break
     path,file_name=dbC.getBookContext(bookID)
 
-    # response = StreamingHttpResponse(file_iterator(path))
-    # response['Content-Type'] = 'application/octet-stream'
+    response = StreamingHttpResponse(file_iterator(path))
+    response['Content-Type'] = 'application/octet-stream'
     # 中文名需如此操作才可正常在客户端显示
-    # response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(file_name))
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(file_name))
 
-    from django.http import HttpResponseRedirect
-    dict={}
-    dict['file_path']='/static/book/'+file_name
-    dict['file_name']=file_name
-    return render(request,'SUCCESS.html',dict)
+    # from django.http import HttpResponseRedirect
+    # dict={}
+    # dict['file_path']='/static/book/'+file_name
+    # dict['file_name']=file_name
+    return response
 
 
 
