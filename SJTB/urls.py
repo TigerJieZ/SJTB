@@ -23,4 +23,6 @@ urlpatterns = [
     path('tools/e-book', views.downloadBookView),
     path('tools/e-book/search', views.searchBookAction),
     path('tools/e-book/download',views.downloadBookNew),
+    path('tools/audio/transform',views.audioTransformView),
+    path('tools/audio/transform_action',views.audioTransformAction)
 ]

@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.utils.encoding import escape_uri_path
 
 from tools.box.downloadBook.db.dbController import dbc
+from tools.box.audioProcess.formatConversion import transAudio
 import threading
 import pymysql
 import os
@@ -51,6 +52,15 @@ def searchBookAction(request):
 
     return render(request,'dlBook.html')
 
+def file_iterator(file_name, chunk_size=8192):
+    with open(file_name,'rb') as f:
+        while True:
+            c = f.read(chunk_size)
+            if c:
+                yield c
+            else:
+                break
+
 def downloadBookNew(request):
     '''
     下载书籍
@@ -62,14 +72,6 @@ def downloadBookNew(request):
 
     dbC=dbc('bookwarehouse')
 
-    def file_iterator(file_name, chunk_size=8192):
-        with open(file_name) as f:
-            while True:
-                c = f.read(chunk_size)
-                if c:
-                    yield c
-                else:
-                    break
     path,file_name=dbC.getBookContext(bookID)
 
     response = StreamingHttpResponse(file_iterator(path))
@@ -114,3 +116,35 @@ def downloadBook(request):
 
     return render(request,'SUCCESS.html',ctx)
 
+def audioTransformView(request):
+    '''
+    音频格式转换页面
+    :param request:
+    :return:
+    '''
+
+    return render(request,"audioTrans.html")
+
+def audioTransformAction(request):
+    type=request.POST.get('audio_type')
+    print(type)
+    obj = request.FILES.get('audio_file')
+    import os
+
+    print(obj.name)
+    f = open('/home/ubuntu/Python_Workspace/SJTB/static/audio/'+obj.name, 'wb')
+    for chunk in obj.chunks():
+        f.write(chunk)
+
+    f.close()
+
+    new_path,new_name=transAudio('/home/ubuntu/Python_Workspace/SJTB/static/audio/'+obj.name,type)
+
+    print(new_path)
+
+    response = StreamingHttpResponse(file_iterator(new_path))
+    response['Content-Type'] = 'application/octet-stream'
+    # 中文名需如此操作才可正常在客户端显示
+    response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(new_name))
+
+    return response
