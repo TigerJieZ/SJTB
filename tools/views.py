@@ -44,22 +44,23 @@ def searchBookAction(request):
         ctx['book_name'] = request.POST.get('book_name', False)
 
         # 查询书名匹配列表
-        dbC=dbc('bookwarehouse')
-        books=dbC.searchBookKey(ctx['book_name'])
-        ctx['books']=books
+        dbC = dbc('bookwarehouse')
+        books = dbC.searchBookKey(ctx['book_name'])
+        ctx['books'] = books
         return render(request, 'dlBook.html', ctx)
 
+    return render(request, 'dlBook.html')
 
-    return render(request,'dlBook.html')
 
 def file_iterator(file_name, chunk_size=8192):
-    with open(file_name,'rb') as f:
+    with open(file_name, 'rb') as f:
         while True:
             c = f.read(chunk_size)
             if c:
                 yield c
             else:
                 break
+
 
 def downloadBookNew(request):
     '''
@@ -68,11 +69,11 @@ def downloadBookNew(request):
     :return:
     '''
     # 获取请求下载书籍的id
-    bookID=request.GET.get('id')
+    bookID = request.GET.get('id')
 
-    dbC=dbc('bookwarehouse')
+    dbC = dbc('bookwarehouse')
 
-    path,file_name=dbC.getBookContext(bookID)
+    path, file_name = dbC.getBookContext(bookID)
 
     response = StreamingHttpResponse(file_iterator(path))
     response['Content-Type'] = 'application/octet-stream'
@@ -86,7 +87,6 @@ def downloadBookNew(request):
     return response
 
 
-
 def downloadBook(request):
     '''
     下载书籍
@@ -95,26 +95,27 @@ def downloadBook(request):
     '''
     # 存放数据提交内容
     ctx = {}
-    bookID=request.GET.get('id')
-    dbC=dbc('bookwarehouse')
-    path=""
+    bookID = request.GET.get('id')
+    dbC = dbc('bookwarehouse')
+    path = ""
 
     def get():
         '''
         子线程用于下载小说
         '''
         nonlocal path
-        path=dbC.getBook(bookID)
-        ctx['path']=path
+        path = dbC.getBook(bookID)
+        ctx['path'] = path
         response = FileResponse(path)
         response['Content-Type'] = 'application/octet-stream'
         response['Content-Disposition'] = 'attachment;filename="example.tar.gz"'
 
-    book_thread=threading.Thread(target=get)
+    book_thread = threading.Thread(target=get)
 
     book_thread.start()
 
-    return render(request,'SUCCESS.html',ctx)
+    return render(request, 'SUCCESS.html', ctx)
+
 
 def audioTransformView(request):
     '''
@@ -123,22 +124,23 @@ def audioTransformView(request):
     :return:
     '''
 
-    return render(request,"audioTrans.html")
+    return render(request, "audioTrans.html")
+
 
 def audioTransformAction(request):
-    type=request.POST.get('audio_type')
+    type = request.POST.get('audio_type')
     print(type)
     obj = request.FILES.get('audio_file')
     import os
 
     print(obj.name)
-    f = open('/home/ubuntu/Python_Workspace/SJTB/static/audio/'+obj.name, 'wb')
+    f = open('/home/ubuntu/Python_Workspace/SJTB/static/audio/' + obj.name, 'wb')
     for chunk in obj.chunks():
         f.write(chunk)
 
     f.close()
 
-    new_path,new_name=transAudio('/home/ubuntu/Python_Workspace/SJTB/static/audio/'+obj.name,type)
+    new_path, new_name = transAudio('/home/ubuntu/Python_Workspace/SJTB/static/audio/' + obj.name, type)
 
     print(new_path)
 
@@ -148,3 +150,12 @@ def audioTransformAction(request):
     response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(new_name))
 
     return response
+
+
+def audioToTextView(request):
+    return render(request, 'audio2text.html')
+
+
+def audioToTextAction(request):
+    language = request.POST.get('audio_language')
+    
