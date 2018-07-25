@@ -1,13 +1,9 @@
-from tools.box.audioProcess import audio2text,formatConversion
+from tools.box.audioProcess.formatConversion import transAudio
 
 
 def testTransAudio():
-    formatConversion.transAudio('/home/ubuntu/Python_Workspace/SJTB/static/audio/a2t_zh_simple.mp3', 'wav')
-
-def testAudio2Text():
-    audio2text.audio2text('/home/ubuntu/Python_Workspace/SJTB/static/audio/a2t_zh_simple.wav','zh-CN')
+    transAudio('/home/ubuntu/Python_Workspace/SJTB/static/audio/simple.mp3', 'wav')
 
 
 if __name__ == '__main__':
-    # testTransAudio()
-    testAudio2Text()
+    testTransAudio()
