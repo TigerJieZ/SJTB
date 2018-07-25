@@ -163,7 +163,7 @@ class Parser:
         res_data = {}
         text = soup.find('div', id="text_area")
         res_data['text'] = text.get_text()
-        # res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
+        res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
 
         return res_data
 

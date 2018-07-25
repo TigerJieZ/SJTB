@@ -66,6 +66,14 @@ def testInitDatabaseContext():
     dbC = dbController.dbc('bookwarehouse')
     dbC.initDatebaseContext()
 
+def updateContext():
+    '''
+    更新段落排版
+    :return:
+    '''
+    for i in range(10):
+        sql="select * "
+
 
 if __name__ == '__main__':
     # testInsertBook()

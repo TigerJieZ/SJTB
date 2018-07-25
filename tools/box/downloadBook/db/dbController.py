@@ -352,17 +352,17 @@ class dbc:
         if remainder is 1 or remainder is 0:
             return i
         elif remainder is 2:
-            return i+3
+            return i + 3
         elif remainder is 3:
-            return i-1
+            return i - 1
         elif remainder is 4:
-            return i+2
+            return i + 2
         elif remainder is 5:
-            return i-2
+            return i - 2
         elif remainder is 6:
-            return i+1
+            return i + 1
         elif remainder is 7:
-            return i-3
+            return i - 3
 
     def getUserAgent(self):
         MY_USER_AGENT = [
@@ -547,12 +547,13 @@ class dbc:
         sql = "select * from chapters where bookID=%s order by chapterName"
         cursor.execute(sql, (bookID))
         row = cursor.fetchone()
-        path = '/home/ubuntu/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
+        path = '/home/ubuntu/Python_Workspace/SJTB/static/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
         file = open(path, 'w')
         while row:
             title = row[2]
             context = row[4]
             file.writelines('第' + str(title) + '章')
+            context = context.replace("    ", "\r\n    ")
             file.write(context)
             row = cursor.fetchone()
         file.close()
