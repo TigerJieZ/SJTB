@@ -236,7 +236,7 @@ class dbc:
                 # 写入书籍内容到文件
                 print(outputer.output_html())
 
-    def checkBookExist(self, book_name, book_auth, book_category):
+    def checkBookExist(self, book_url):
         '''
         检查该书籍是否已爬取
         :param book_name:书名
@@ -244,9 +244,9 @@ class dbc:
         :param book_category:类别
         :return:布尔值，存在返回true，否则返回false
         '''
-        sql = "select count(id) from books where bookName=%s and bookAuth=%s and bookCategory=%s"
+        sql = "select count(id) from books where bookURL=%s"
         cursor = self.db.cursor()
-        cursor.execute(sql, (book_name, book_auth, book_category))
+        cursor.execute(sql, (book_url))
         row = cursor.fetchone()
         if row[0] is 1 or row[0] is '1':
             print('该书籍已爬取，跳过__________')
@@ -277,6 +277,10 @@ class dbc:
             for book_url in books_urls:
                 # 解析主页得到章节url列表、书名、类别、作者
                 try:
+                    # 若存在书籍
+                    if self.checkBookExist(book_url):
+                        continue
+
                     sections_url, title, category, auth = parser.find_section_urls(book_url)
                     book = {}
                     print('----正在爬取书籍：', title)
@@ -288,9 +292,8 @@ class dbc:
                     book['source'] = 1
                     chapters = []
 
-                    # 若存在书籍
-                    if self.checkBookExist(title, auth, category):
-                        continue
+                    # 书籍字数
+                    wordage=0
 
                     # 解析章节信息存入chapters
                     def parseSction(section_url, i):
@@ -303,16 +306,21 @@ class dbc:
                                                           proxy=proxy)
                         new_data = parser.parser_Section(html_cont)
 
-                        # 使用外部变量
-                        nonlocal threads, chapters
+                        try:
+                            # 使用外部变量
+                            nonlocal threads, chapters,wordage
 
-                        # 将章节名和章节url存入chapters
-                        chapter = {'chapter_name': i, 'chapter_url': section_url,
-                                   'context': new_data['text']}
-                        chapters.append(chapter)
+                            # 将章节名和章节url存入chapters
+                            chapter = {'chapter_name': i, 'chapter_url': section_url,
+                                       'context': new_data['text']}
+                            chapters.append(chapter)
 
-                        # 退出线程，线程数-1
-                        threads -= 1
+                            wordage += len(new_data['text']) - new_data['text'].count("    ") * 4 - 25
+                        except Exception as e:
+                            print(section_url,'-----章节内容获取失败')
+                        finally:
+                            # 退出线程，线程数-1
+                            threads -= 1
 
                     # 多线程访问
                     threads = 0
@@ -336,6 +344,8 @@ class dbc:
                     #     chapters.append(chapter)
                     # 章节信息列表存入book中
                     book['chapters'] = chapters
+                    # 书籍字数存入book中
+                    book['wordage']=wordage
                     self.insetBook(book)
                     self.book_warehouse.append(book)
                 except Exception as e:

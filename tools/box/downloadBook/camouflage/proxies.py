@@ -69,7 +69,6 @@ def get_port_list(url, headers):
     print('共找到代理端口：', len(port_list), '个')
     return port_list
 
-
 def find_proxy(url, headers):
     # 分别捕获代理ip和port
     ip_list = get_ip_list(url, headers)
