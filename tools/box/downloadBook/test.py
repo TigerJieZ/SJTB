@@ -74,6 +74,10 @@ def updateContext():
     for i in range(10):
         sql="select * "
 
+def testWordCount():
+    dbC = dbController.dbc('bookwarehouse')
+    dbC.wordCount()
+
 
 if __name__ == '__main__':
     # testInsertBook()
@@ -87,3 +91,4 @@ if __name__ == '__main__':
     # testGetProxy()
     # testGetBook()
     # testFindSectionsURLs()
+    # testWordCount()

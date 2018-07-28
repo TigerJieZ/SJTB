@@ -189,7 +189,7 @@ class Parser:
 
     def find_list_urls(self):
         list_urls = []
-        i = 1
+        i = 30
         while i <= 2519:
             url = "http://www.23zw.me/class_0_" + str(i) + ".html"
             list_urls.append(url)

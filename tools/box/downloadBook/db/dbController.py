@@ -441,6 +441,9 @@ class dbc:
             book['name'] = row[1]
             book['category'] = row[2]
             book['auth'] = row[3]
+            book['update_date']=row[5]
+            book['wordage']=row[6]
+            book['book_url']=row[7]
             book['source'] = row[8]
             books.append(book)
             row = cursor.fetchone()
@@ -559,3 +562,49 @@ class dbc:
         file.close()
 
         return path, book_name + '_' + book_auth + '_' + book_category + '.txt'
+
+    def wordCount(self):
+        '''
+        统计书籍的字数
+        :return:
+        '''
+
+        # 查询未统计字数的书籍ID
+        sql="select id from books where bookWordage=%s"
+        cursor=self.db.cursor()
+        cursor.execute(sql,(-1))
+        row=cursor.fetchone()
+        book_id_list=[]
+        while row:
+            book_id_list.append(row[0])
+            row=cursor.fetchone()
+
+        for book_id in book_id_list:
+            # 查询该书籍的章节内容
+            sql = "select context,id from chapters where bookID=%s"
+            cursor.execute(sql, (book_id))
+            chapter_row = cursor.fetchone()
+            wordage=0
+            while chapter_row:
+                # 减去空格数占用的字数，每段空格数占4个字数,再减去一头一尾的空格字数大约25个字数
+                wordage+=len(chapter_row[0])-chapter_row[0].count("    ")*4-25
+                chapter_row = cursor.fetchone()
+            print('-------',wordage,'-------')
+
+            sql="update books set bookWordage=%s where id=%s"
+
+            try:
+                # 执行更新字数sql
+                cursor.execute(sql, (wordage, book_id))
+                # 提交事务
+                self.db.commit()
+            except Exception as e:
+                # 若出错，回滚事务
+                self.db.rollback()
+                s = sys.exc_info()
+                print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
+
+
+
+
+

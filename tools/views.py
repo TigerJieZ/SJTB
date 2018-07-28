@@ -147,7 +147,6 @@ def audioTransformAction(request):
     # 中文名需如此操作才可正常在客户端显示
     response['Content-Disposition'] = "attachment; filename*=utf-8''{}".format(escape_uri_path(new_name))
 
-<<<<<<< HEAD
     return response
 
 
@@ -157,6 +156,4 @@ def audioToTextView(request):
 
 def audioToTextAction(request):
     language = request.POST.get('audio_language')
-=======
-    return response
->>>>>>> parent of 70a075b... 音频转文字
+    return render(request,'SUCCESS.html')
