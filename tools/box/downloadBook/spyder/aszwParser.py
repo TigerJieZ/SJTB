@@ -163,7 +163,7 @@ class Parser:
         res_data = {}
         text = soup.find('div', id="text_area")
         res_data['text'] = text.get_text()
-        # res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
+        res_data['text'] = res_data['text'].replace("    ", "\r\n    ")
 
         return res_data
 
@@ -189,7 +189,7 @@ class Parser:
 
     def find_list_urls(self):
         list_urls = []
-        i = 1
+        i = 28
         while i <= 2519:
             url = "http://www.23zw.me/class_0_" + str(i) + ".html"
             list_urls.append(url)

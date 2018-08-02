@@ -265,7 +265,8 @@ class dbc:
         downloader = aszwDownloader.Downloader()
         cookies = self.getCookies()
         user_agent = self.getUserAgent()
-        proxy_list = proxies.get_proxy('http://www.xicidaili.com/nn/', {'User-agent': 'Mr.Zhang'})
+        proxy_list = proxies.get_proxy('http://www.xicidaili.com/nn/',
+                                       {'User-agent': 'Mr.Zhang'})
 
         # 从傲视中文网的书籍列表中把列表url爬取下来
         list_url = parser.find_list_urls()

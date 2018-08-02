@@ -71,6 +71,7 @@ def get_port_list(url, headers):
 
 
 def find_proxy(url, headers):
+    print(url)
     # 分别捕获代理ip和port
     ip_list = get_ip_list(url, headers)
     port_list = get_port_list(url, headers)
@@ -120,7 +121,9 @@ def get_proxy(url, headers):
     :return:
     '''
     # 捕捉proxy
-    proxy_list = find_proxy(url, headers)
+    proxy_list=[]
+    for i in range(1,4):
+        proxy_list+=find_proxy(url+str(i), headers)
 
     # 可用性检查
     ava_proxy_list = check(proxy_list)
