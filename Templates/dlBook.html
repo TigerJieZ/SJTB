@@ -94,15 +94,18 @@
                                 <center><h3>
                                     {{ book.name }}
                                 </h3></center>
-                                <p style="float: right">
-                                    类别：{{ book.category }}&emsp;&emsp;作者：{{ book.auth }}
+                                <p style="float: left">
+                                    类别：{{ book.category }}&emsp;&emsp;作者：{{ book.auth }}<br>
+                                    字数：{{ book.wordage }}<br>
+                                    最后更新时间：{{ book.update_date }}<br>
+                                    <a href="{{ book.book_url }}">源网址</a>
                                 </p>
                                 <p style="float: left">
                                     &emsp;&emsp;小说简介部分
                                 </p><br>
                                 <p style="float:right">
                                      <a class="btn btn-primary" href="download?id={{ book.id }}">下载</a>
-                                </p><br><br>
+                                </p><br><br><br><br><br><br>
                             </div>
                         </div>
 				    </div>

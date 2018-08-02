@@ -236,7 +236,7 @@ class dbc:
                 # 写入书籍内容到文件
                 print(outputer.output_html())
 
-    def checkBookExist(self, book_name, book_auth, book_category):
+    def checkBookExist(self, book_url):
         '''
         检查该书籍是否已爬取
         :param book_name:书名
@@ -244,9 +244,9 @@ class dbc:
         :param book_category:类别
         :return:布尔值，存在返回true，否则返回false
         '''
-        sql = "select count(id) from books where bookName=%s and bookAuth=%s and bookCategory=%s"
+        sql = "select count(id) from books where bookURL=%s"
         cursor = self.db.cursor()
-        cursor.execute(sql, (book_name, book_auth, book_category))
+        cursor.execute(sql, (book_url))
         row = cursor.fetchone()
         if row[0] is 1 or row[0] is '1':
             print('该书籍已爬取，跳过__________')
@@ -278,6 +278,10 @@ class dbc:
             for book_url in books_urls:
                 # 解析主页得到章节url列表、书名、类别、作者
                 try:
+                    # 若存在书籍
+                    if self.checkBookExist(book_url):
+                        continue
+
                     sections_url, title, category, auth = parser.find_section_urls(book_url)
                     book = {}
                     print('----正在爬取书籍：', title)
@@ -289,9 +293,8 @@ class dbc:
                     book['source'] = 1
                     chapters = []
 
-                    # 若存在书籍
-                    if self.checkBookExist(title, auth, category):
-                        continue
+                    # 书籍字数
+                    wordage=0
 
                     # 解析章节信息存入chapters
                     def parseSction(section_url, i):
@@ -304,16 +307,21 @@ class dbc:
                                                           proxy=proxy)
                         new_data = parser.parser_Section(html_cont)
 
-                        # 使用外部变量
-                        nonlocal threads, chapters
+                        try:
+                            # 使用外部变量
+                            nonlocal threads, chapters,wordage
 
-                        # 将章节名和章节url存入chapters
-                        chapter = {'chapter_name': i, 'chapter_url': section_url,
-                                   'context': new_data['text']}
-                        chapters.append(chapter)
+                            # 将章节名和章节url存入chapters
+                            chapter = {'chapter_name': i, 'chapter_url': section_url,
+                                       'context': new_data['text']}
+                            chapters.append(chapter)
 
-                        # 退出线程，线程数-1
-                        threads -= 1
+                            wordage += len(new_data['text']) - new_data['text'].count("    ") * 4 - 25
+                        except Exception as e:
+                            print(section_url,'-----章节内容获取失败')
+                        finally:
+                            # 退出线程，线程数-1
+                            threads -= 1
 
                     # 多线程访问
                     threads = 0
@@ -337,6 +345,8 @@ class dbc:
                     #     chapters.append(chapter)
                     # 章节信息列表存入book中
                     book['chapters'] = chapters
+                    # 书籍字数存入book中
+                    book['wordage']=wordage
                     self.insetBook(book)
                     self.book_warehouse.append(book)
                 except Exception as e:
@@ -353,17 +363,17 @@ class dbc:
         if remainder is 1 or remainder is 0:
             return i
         elif remainder is 2:
-            return i+3
+            return i + 3
         elif remainder is 3:
-            return i-1
+            return i - 1
         elif remainder is 4:
-            return i+2
+            return i + 2
         elif remainder is 5:
-            return i-2
+            return i - 2
         elif remainder is 6:
-            return i+1
+            return i + 1
         elif remainder is 7:
-            return i-3
+            return i - 3
 
     def getUserAgent(self):
         MY_USER_AGENT = [
@@ -442,6 +452,9 @@ class dbc:
             book['name'] = row[1]
             book['category'] = row[2]
             book['auth'] = row[3]
+            book['update_date']=row[5]
+            book['wordage']=row[6]
+            book['book_url']=row[7]
             book['source'] = row[8]
             books.append(book)
             row = cursor.fetchone()
@@ -548,14 +561,61 @@ class dbc:
         sql = "select * from chapters where bookID=%s order by chapterName"
         cursor.execute(sql, (bookID))
         row = cursor.fetchone()
-        path = '/home/ubuntu/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
+        path = '/home/ubuntu/Python_Workspace/SJTB/static/book/' + book_name + '_' + book_auth + '_' + book_category + '.txt'
         file = open(path, 'w')
         while row:
             title = row[2]
             context = row[4]
             file.writelines('第' + str(title) + '章')
+            context = context.replace("    ", "\r\n    ")
             file.write(context)
             row = cursor.fetchone()
         file.close()
 
         return path, book_name + '_' + book_auth + '_' + book_category + '.txt'
+
+    def wordCount(self):
+        '''
+        统计书籍的字数
+        :return:
+        '''
+
+        # 查询未统计字数的书籍ID
+        sql="select id from books where bookWordage=%s"
+        cursor=self.db.cursor()
+        cursor.execute(sql,(-1))
+        row=cursor.fetchone()
+        book_id_list=[]
+        while row:
+            book_id_list.append(row[0])
+            row=cursor.fetchone()
+
+        for book_id in book_id_list:
+            # 查询该书籍的章节内容
+            sql = "select context,id from chapters where bookID=%s"
+            cursor.execute(sql, (book_id))
+            chapter_row = cursor.fetchone()
+            wordage=0
+            while chapter_row:
+                # 减去空格数占用的字数，每段空格数占4个字数,再减去一头一尾的空格字数大约25个字数
+                wordage+=len(chapter_row[0])-chapter_row[0].count("    ")*4-25
+                chapter_row = cursor.fetchone()
+            print('-------',wordage,'-------')
+
+            sql="update books set bookWordage=%s where id=%s"
+
+            try:
+                # 执行更新字数sql
+                cursor.execute(sql, (wordage, book_id))
+                # 提交事务
+                self.db.commit()
+            except Exception as e:
+                # 若出错，回滚事务
+                self.db.rollback()
+                s = sys.exc_info()
+                print("Error '%s' happened on line %d" % (s[1], s[2].tb_lineno))
+
+
+
+
+

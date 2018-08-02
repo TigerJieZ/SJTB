@@ -22,6 +22,8 @@ class Downloader:
             html = opener.open(request).read()
         except Exception as e:
             print('Download error:', e)
+            print('-----proxy:',proxy,'-----')
+            print('-----url:',url,'-----')
             html = None
             if num_retries > 0:
                 if hasattr(e, 'code') and 500 <= e.code < 600:

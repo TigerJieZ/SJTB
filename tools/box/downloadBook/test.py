@@ -66,6 +66,18 @@ def testInitDatabaseContext():
     dbC = dbController.dbc('bookwarehouse')
     dbC.initDatebaseContext()
 
+def updateContext():
+    '''
+    更新段落排版
+    :return:
+    '''
+    for i in range(10):
+        sql="select * "
+
+def testWordCount():
+    dbC = dbController.dbc('bookwarehouse')
+    dbC.wordCount()
+
 
 if __name__ == '__main__':
     # testInsertBook()
@@ -79,3 +91,4 @@ if __name__ == '__main__':
     # testGetProxy()
     # testGetBook()
     # testFindSectionsURLs()
+    # testWordCount()
